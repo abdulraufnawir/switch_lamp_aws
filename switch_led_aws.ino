@@ -4,41 +4,24 @@
 #include <ArduinoJson.h>
 #include <time.h>
 #include "secrets.h"
-#include "DHT.h"
-#include <IRremoteESP8266.h>
-#include <IRsend.h>
-#include <ir_LG.h>
 
-
-#define DHTPIN 4        // Digital pin connected to the DHT sensor
-#define DHTTYPE DHT22   // DHT 11
-#define Desired_temp 24 //The desired temperature is 24*C at any time
-
-
-const uint16_t kIrLed = 4;  // IR pin I/O on MCU
-IRLgAc ac(kIrLed);  // Set the GPIO to be used for sending messages.
- 
-DHT dht(DHTPIN, DHTTYPE);
- 
-int h ;
-int t;
 unsigned long lastMillis = 0;
 unsigned long previousMillis = 0;
 const long interval = 30000;
 
 // Relay Pins
-#define AC1 LED_BUILTIN
-#define AC2 2 //test
-#define AC3 4 //tested
-#define AC4 12 // tested
+#define Switch1 LED_BUILTIN
+#define Switch2 2 //
+#define Switch3 4 //
+#define Switch4 12 //
 
 
 //Topic of MQTT 
 #define AWS_IOT_PUBLISH_TOPIC   "wemos/temp_humid" // esp8266_1/sub
-#define AWS_IOT_SUBSCRIBE_TOPIC1 "wemos/AC1"
-#define AWS_IOT_SUBSCRIBE_TOPIC2 "wemos/AC2"
-#define AWS_IOT_SUBSCRIBE_TOPIC3 "wemos/AC3"
-#define AWS_IOT_SUBSCRIBE_TOPIC4 "wemos/AC4"
+#define AWS_IOT_SUBSCRIBE_TOPIC1 "wemos/Switch1"
+#define AWS_IOT_SUBSCRIBE_TOPIC2 "wemos/Switch2"
+#define AWS_IOT_SUBSCRIBE_TOPIC3 "wemos/Switch3"
+#define AWS_IOT_SUBSCRIBE_TOPIC4 "wemos/Switch4"
 
  
 WiFiClientSecure net;
@@ -72,19 +55,7 @@ void NTPConnect(void)
 }
  
  
-//void messageReceived(char *topic, byte *payload, unsigned int length)
-//{
-//  Serial.print("Received [");
-//  Serial.print(topic);
-//  Serial.print("]: ");
-//  for (int i = 0; i < length; i++)
-//  {
-//    Serial.print((char)payload[i]);
-//  }
-//  Serial.println();
-//}
- 
- 
+
 void connectAWS()
 {
   delay(3000);
@@ -134,10 +105,8 @@ void publishMessage()
 {
   StaticJsonDocument<200> doc;
   doc["time"] = millis();
-  doc["humidity"] = h;
-  doc["temperature"] = t;
-  //doc["AC_Status"] = ; //ON or OFF
-  // doc["AC_setpoint"]=;
+  doc["running text"] = "Hello world";
+  
   char jsonBuffer[512];
   serializeJson(doc, jsonBuffer); // print to client
  
@@ -149,12 +118,10 @@ void setup()
 {
   Serial.begin(115200);
   connectAWS();
-  dht.begin();
-//  ac.begin();
-  pinMode(AC1, OUTPUT);
-  pinMode(AC2, OUTPUT);
-  pinMode(AC3, OUTPUT);
-  pinMode(AC4, OUTPUT);
+  pinMode(Switch1, OUTPUT);
+  pinMode(Switch2, OUTPUT);
+  pinMode(Switch3, OUTPUT);
+  pinMode(Switch4, OUTPUT);
 }
  
 void messageHandler(char* topic, byte* payload, unsigned int length)
@@ -162,44 +129,44 @@ void messageHandler(char* topic, byte* payload, unsigned int length)
   Serial.print("incoming: ");
   Serial.println(topic);
 
-  if ( strstr(topic, "wemos/AC1") )
+  if ( strstr(topic, "wemos/Switch1") )
   {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
-    String Relay_data = doc["status"];
-    int r = Relay_data.toInt();
-    digitalWrite(AC1, !r);
-    Serial.print("AC1 - "); Serial.println(Relay_data);
+    String Switch_data = doc["status"];
+    int r = Switch_data.toInt();
+    digitalWrite(Switch1, !r);
+    Serial.print("Switch1 - "); Serial.println(Switch_data);
   }
 
-  if ( strstr(topic, "wemos/AC2") )
+  if ( strstr(topic, "wemos/Switch2") )
   {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
-    String Relay_data = doc["status"];
-    int r = Relay_data.toInt();
-    digitalWrite(AC2, !r);
-    Serial.print("AC2 - "); Serial.println(Relay_data);
+    String Switch_data = doc["status"];
+    int r = Switch_data.toInt();
+    digitalWrite(Switch2, !r);
+    Serial.print("Switch2 - "); Serial.println(Switch_data);
   }
 
-  if ( strstr(topic, "wemos/AC1") )
+  if ( strstr(topic, "wemos/Switch1") )
   {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
-    String Relay_data = doc["status"];
-    int r = Relay_data.toInt();
-    digitalWrite(AC3, !r);
-    Serial.print("AC3 - "); Serial.println(Relay_data);
+    String Switch_data = doc["status"];
+    int r = Switch_data.toInt();
+    digitalWrite(Switch3, !r);
+    Serial.print("Switch3 - "); Serial.println(Switch_data);
   }
 
-  if ( strstr(topic, "wemos/AC1") )
+  if ( strstr(topic, "wemos/Switch1") )
   {
     StaticJsonDocument<200> doc;
     deserializeJson(doc, payload);
-    String Relay_data = doc["status"];
-    int r = Relay_data.toInt();
-    digitalWrite(AC4, !r);
-    Serial.print("AC4 - "); Serial.println(Relay_data);
+    String Switch_data = doc["status"];
+    int r = Switch_data.toInt();
+    digitalWrite(Switch4, !r);
+    Serial.print("AC4 - "); Serial.println(Switch_data);
   }
 
 
@@ -207,22 +174,7 @@ void messageHandler(char* topic, byte* payload, unsigned int length)
  
 void loop()
 {
-  h = dht.readHumidity();
-  t = dht.readTemperature();
- 
-  if (isnan(h) || isnan(t) )  // Check if any reads failed and exit early (to try again).
-  {
-    Serial.println(F("Failed to read from DHT sensor!"));
-    return;
-  }
- 
-  Serial.print(F("Humidity: "));
-  Serial.print(h);
-  Serial.print(F("%  Temperature: "));
-  Serial.print(t);
-  Serial.println(F("°C "));
-  delay(2000);
- 
+   
   now = time(nullptr);
  
   if (!client.connected())
